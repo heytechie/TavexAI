@@ -6,6 +6,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import protect from './middleware/auth.middleware.js';
 import { getCurrentUser } from './controllers/user.controller.js';
+import proxyWithServer from './utils/proxyWithHeader.js';
 
 const app = express();
 
@@ -17,7 +18,8 @@ app.use(cors({
 }));
 
 app.get('/api/user/me', protect, getCurrentUser);
-app.use("/auth", proxy(process.env.AUTH_SERVICE || "http://localhost:8001"));
+app.use("/auth", proxy(process.env.AUTH_SERVICE));
+app.use("/chat", protect,proxyWithServer(process.env.CHAT_SERVICE));
 
 const port = process.env.PORT || 8000;
 

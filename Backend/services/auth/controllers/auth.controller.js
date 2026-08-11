@@ -30,19 +30,23 @@ export const login = async (req, res) => {
         }
 
         const sessionId = crypto.randomUUID();
-        await redis.set(`session-${sessionId}`, JSON.stringify({
+        const redisKey = `session-${sessionId}`;
+        await redis.set(redisKey, JSON.stringify({
             userId: user._id,
             name: user.name,
             email: user.email,
             avatar: user.avatar
         }), "EX", 7 * 24 * 60 * 60);
 
+        console.log(`[Auth Service] Saved session to Redis: "${redisKey}" for user:`, user.email);
+
         res.cookie("sessionId", sessionId, {
             httpOnly: true,
             secure: false,
-            sameSite: "strict",
+            sameSite: "lax",
+            path: "/",
             maxAge: 7 * 24 * 60 * 60 * 1000
-        })
+        });
 
         return res.json(user)
     } catch (err) {
