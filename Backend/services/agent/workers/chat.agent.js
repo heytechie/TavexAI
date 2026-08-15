@@ -1,4 +1,6 @@
+import { SystemMessage } from "@langchain/core/messages";
 import { getModel } from "../config/llmModels.js";
+import { getMemory } from "../config/memory.js";
 
 const CHAT_SYSTEM_PROMPT = `You are TavexAI's core conversational AI assistantâ€”intelligent, adaptive, precise, and hyper-accurate.
 
@@ -20,14 +22,29 @@ const CHAT_SYSTEM_PROMPT = `You are TavexAI's core conversational AI assistantâ€
    - Be helpful, polite, direct, and clear.`;
 
 export const chatAgent = async (state) => {
-    const llm = await getModel("chat");
+   const llm = await getModel("chat");
 
-    const response = await llm.invoke([
-        ["system", CHAT_SYSTEM_PROMPT],
-        ["human", state.prompt]
-    ]);
+   const history = await getMemory(state.conversationId)
 
-    const aiResponse = typeof response === "string" ? response : response.content;
+   const messages = [
+      new SystemMessage(CHAT_SYSTEM_PROMPT),
+   ]
 
-    return { aiResponse };
-};
+   history.forEach(msg => {
+      if (msg.role === "user") {
+         messages.push(new HumanMessage(msg.content));
+      } else {
+         messages.push(new AIMessage(msg.content));
+      }
+   });
+
+   messages.push(new HumanMessage(state.prompt));
+
+   console.log(messages);
+
+   const response = await llm.invoke(messages);
+
+   const aiResponse = typeof response === "string" ? response : response.content;
+
+   return { aiResponse };
+};
